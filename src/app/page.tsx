@@ -99,6 +99,32 @@ export default function Home() {
     }
   };
 
+  const handleToggleDevice = async (device: any) => {
+    const domain = device.id.split('.')[0];
+    if (domain !== 'light' && domain !== 'switch') return;
+
+    const action = device.state === 'on' ? 'turn_off' : 'turn_on';
+    
+    // Optimistic Update
+    setDevices((prev) => 
+      prev.map((d) => 
+        d.id === device.id 
+          ? { ...d, state: action === 'turn_on' ? 'on' : 'off' } 
+          : d
+      )
+    );
+
+    try {
+      await fetch('/api/devices/action', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ entityId: device.id, action })
+      });
+    } catch (error) {
+      console.error('Failed to toggle device', error);
+    }
+  };
+
   if (loading)
     return (
       <div className="p-8 text-black dark:text-white">Loading Dashboard...</div>
@@ -150,9 +176,20 @@ export default function Home() {
                       : 'bg-gray-50 border-gray-200 dark:bg-zinc-900 dark:border-zinc-700'
                   }`}
                 >
-                  <div>
-                    <h3 className="font-semibold">{device.customName || device.id}</h3>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 capitalize">{device.state}</p>
+                  <div className="flex items-center gap-3 flex-1">
+                    {(device.id.startsWith('light.') || device.id.startsWith('switch.')) && (
+                      <button 
+                        onClick={() => handleToggleDevice(device)}
+                        className={`w-10 h-6 rounded-full relative transition-colors ${device.state === 'on' ? 'bg-blue-500' : 'bg-gray-300 dark:bg-gray-600'}`}
+                        aria-label={`Toggle ${device.customName || device.id}`}
+                      >
+                        <span className={`absolute top-1 left-1 bg-white w-4 h-4 rounded-full transition-transform ${device.state === 'on' ? 'translate-x-4' : ''}`} />
+                      </button>
+                    )}
+                    <div className="flex-1 cursor-pointer">
+                      <h3 className="font-semibold">{device.customName || device.id}</h3>
+                      <p className="text-sm text-gray-500 dark:text-gray-400 capitalize">{device.state}</p>
+                    </div>
                   </div>
                   <div className="relative">
                     <button className="text-gray-500 hover:text-gray-900 dark:hover:text-gray-100 p-1 font-bold">
@@ -192,9 +229,20 @@ export default function Home() {
                         : 'bg-gray-50 border-gray-200 dark:bg-zinc-900 dark:border-zinc-700'
                     }`}
                   >
-                    <div>
-                      <h3 className="font-semibold">{device.customName || device.id}</h3>
-                      <p className="text-sm text-gray-500 dark:text-gray-400 capitalize">{device.state}</p>
+                    <div className="flex items-center gap-3 flex-1">
+                      {(device.id.startsWith('light.') || device.id.startsWith('switch.')) && (
+                        <button 
+                          onClick={() => handleToggleDevice(device)}
+                          className={`w-10 h-6 rounded-full relative transition-colors ${device.state === 'on' ? 'bg-blue-500' : 'bg-gray-300 dark:bg-gray-600'}`}
+                          aria-label={`Toggle ${device.customName || device.id}`}
+                        >
+                          <span className={`absolute top-1 left-1 bg-white w-4 h-4 rounded-full transition-transform ${device.state === 'on' ? 'translate-x-4' : ''}`} />
+                        </button>
+                      )}
+                      <div className="flex-1 cursor-pointer">
+                        <h3 className="font-semibold">{device.customName || device.id}</h3>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 capitalize">{device.state}</p>
+                      </div>
                     </div>
                     <div className="relative">
                       <button className="text-gray-500 hover:text-gray-900 dark:hover:text-gray-100 p-1 font-bold">
