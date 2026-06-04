@@ -60,6 +60,26 @@ export default function DiscoverPage() {
     }
   };
 
+  const handleRemoveDevice = async (entityId: string) => {
+    try {
+      const res = await fetch(`/api/devices?entityId=${encodeURIComponent(entityId)}`, {
+        method: 'DELETE',
+      });
+
+      if (res.ok) {
+        setAddedIds((prev) => {
+          const next = new Set(prev);
+          next.delete(entityId);
+          return next;
+        });
+      } else {
+        console.error('Failed to remove device');
+      }
+    } catch (error) {
+      console.error('Error removing device', error);
+    }
+  };
+
   return (
     <div className="p-8 text-gray-900 dark:text-gray-100">
       <h1 className="text-2xl font-bold mb-6">Discover Home Assistant Devices</h1>
@@ -89,17 +109,21 @@ export default function DiscoverPage() {
                     <td className="py-2 px-4 border-b dark:border-gray-700">{device.state}</td>
                     <td className="py-2 px-4 border-b dark:border-gray-700">{device.type}</td>
                     <td className="py-2 px-4 border-b dark:border-gray-700">
-                      <button
-                        onClick={() => handleAddDevice(device)}
-                        disabled={addedIds.has(device.id)}
-                        className={`px-3 py-1 text-white text-sm rounded ${
-                          addedIds.has(device.id)
-                            ? 'bg-green-500 cursor-default'
-                            : 'bg-blue-500 hover:bg-blue-600'
-                        }`}
-                      >
-                        {addedIds.has(device.id) ? 'Added' : 'Add to Dashboard'}
-                      </button>
+                      {addedIds.has(device.id) ? (
+                        <button
+                          onClick={() => handleRemoveDevice(device.id)}
+                          className="px-3 py-1 text-white text-sm rounded bg-red-500 hover:bg-red-600"
+                        >
+                          Remove
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => handleAddDevice(device)}
+                          className="px-3 py-1 text-white text-sm rounded bg-blue-500 hover:bg-blue-600"
+                        >
+                          Add to Dashboard
+                        </button>
+                      )}
                     </td>
                   </tr>
                 );

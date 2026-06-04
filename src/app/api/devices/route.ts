@@ -51,3 +51,24 @@ export async function PUT(request: Request) {
   }
 }
 
+// DELETE: Remove a configured device from Prisma
+export async function DELETE(request: Request) {
+  try {
+    const url = new URL(request.url);
+    const entityId = url.searchParams.get('entityId');
+
+    if (!entityId) {
+      return NextResponse.json({ error: 'entityId is required' }, { status: 400 });
+    }
+
+    await prisma.device.delete({
+      where: { id: entityId },
+    });
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('Failed to remove device from database:', error);
+    return NextResponse.json({ error: 'Failed to remove device' }, { status: 500 });
+  }
+}
+
