@@ -71,10 +71,31 @@ export default function Home() {
         setNewGroupName("");
         // Optionally trigger a re-fetch of the dashboard to pull the new group structures
         // (Even if empty, it's good practice so they appear in dropdowns later)
-        // window.location.reload(); 
+        window.location.reload(); 
       }
     } catch (error) {
       console.error('Failed to create group:', error);
+    }
+  };
+
+  const handleAssignToGroup = async (device: any, groupId: string) => {
+    try {
+      const res = await fetch('/api/devices', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          entityId: device.id,
+          customName: device.customName,
+          groupId: groupId === "unparented" ? "clear" : groupId,
+        }),
+      });
+
+      if (res.ok) {
+        // Just reload the page to cleanly reconstruct the lists
+        window.location.reload();
+      }
+    } catch (error) {
+      console.error('Error assigning group', error);
     }
   };
 
@@ -123,7 +144,7 @@ export default function Home() {
               {unparentedDevices.map(device => (
                 <div
                   key={device.id}
-                  className={`p-4 rounded-xl border flex flex-col justify-between ${
+                  className={`p-4 rounded-xl border flex justify-between items-start ${
                     device.state === 'on' 
                       ? 'bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:border-blue-800' 
                       : 'bg-gray-50 border-gray-200 dark:bg-zinc-900 dark:border-zinc-700'
@@ -132,6 +153,21 @@ export default function Home() {
                   <div>
                     <h3 className="font-semibold">{device.customName || device.id}</h3>
                     <p className="text-sm text-gray-500 dark:text-gray-400 capitalize">{device.state}</p>
+                  </div>
+                  <div className="relative">
+                    <button className="text-gray-500 hover:text-gray-900 dark:hover:text-gray-100 p-1 font-bold">
+                      &#8964; {/* Down arrow / menu icon */}
+                    </button>
+                    <select
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer bg-white text-black dark:bg-zinc-800 dark:text-white"
+                      value=""
+                      onChange={(e) => handleAssignToGroup(device, e.target.value)}
+                    >
+                      <option value="" disabled>Move to...</option>
+                      {groupsConfig.map(g => (
+                        <option key={g.id} value={g.id}>{g.name}</option>
+                      ))}
+                    </select>
                   </div>
                 </div>
               ))}
@@ -150,7 +186,7 @@ export default function Home() {
                 {group.devices.map((device: any) => (
                   <div
                     key={device.id}
-                    className={`p-4 rounded-xl border flex flex-col justify-between ${
+                    className={`p-4 rounded-xl border flex justify-between items-start ${
                       device.state === 'on' 
                         ? 'bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:border-blue-800' 
                         : 'bg-gray-50 border-gray-200 dark:bg-zinc-900 dark:border-zinc-700'
@@ -159,6 +195,22 @@ export default function Home() {
                     <div>
                       <h3 className="font-semibold">{device.customName || device.id}</h3>
                       <p className="text-sm text-gray-500 dark:text-gray-400 capitalize">{device.state}</p>
+                    </div>
+                    <div className="relative">
+                      <button className="text-gray-500 hover:text-gray-900 dark:hover:text-gray-100 p-1 font-bold">
+                        &#8964; {/* Down arrow / menu icon */}
+                      </button>
+                      <select
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer bg-white text-black dark:bg-zinc-800 dark:text-white"
+                        value=""
+                        onChange={(e) => handleAssignToGroup(device, e.target.value)}
+                      >
+                        <option value="" disabled>Move to...</option>
+                        <option value="unparented">Unparented (Remove)</option>
+                        {groupsConfig.map(g => (
+                          <option key={g.id} value={g.id}>{g.name}</option>
+                        ))}
+                      </select>
                     </div>
                   </div>
                 ))}
