@@ -1,13 +1,27 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/shared/db/prisma';
+import { haClient } from '@/integrations/home-assistant/client';
 
-// GET configured devices from Prisma (for the dashboard)
+// GET configured devices from Prisma and merge with their current HA state
 export async function GET() {
   try {
     const configuredDevices = await prisma.device.findMany({
       include: { groups: true }
     });
-    return NextResponse.json(configuredDevices);
+
+    // Fetch the live states from HA to overlay onto our Prisma config
+    const haStates = await haClient.getStates();
+
+    const mergedDevices = configuredDevices.map(dbDevice => {
+      const liveState = haStates.find((s: any) => s.entity_id === dbDevice.id);
+      return {
+        ...dbDevice,
+        state: liveState?.state || 'unavailable',
+        attributes: liveState?.attributes || {}
+      };
+    });
+
+    return NextResponse.json(mergedDevices);
   } catch (error) {
     console.error('Failed to fetch local devices:', error);
     return NextResponse.json({ error: 'Failed to fetch local devices' }, { status: 500 });
