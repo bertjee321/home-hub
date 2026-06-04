@@ -5,26 +5,38 @@ import { useEffect, useState } from 'react';
 
 export default function DiscoverPage() {
   const [devices, setDevices] = useState<BaseDevice[]>([]);
-  const [loading, setLoading] = useState(true);
   const [addedIds, setAddedIds] = useState<Set<string>>(new Set());
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    async function fetchDevices() {
+    async function fetchData() {
       try {
-        const response = await fetch('/api/devices/discover');
-        if (response.ok) {
-          const data = await response.json();
-          setDevices(data);
+        // Fetch raw HA discovery devices
+        const haRes = fetch('/api/devices/discover');
+        // Fetch what we already have configured in Prisma
+        const dbRes = fetch('/api/devices');
+
+        const [haResponse, dbResponse] = await Promise.all([haRes, dbRes]);
+
+        if (haResponse.ok && dbResponse.ok) {
+          const haData = await haResponse.json();
+          const dbData = await dbResponse.json();
+
+          setDevices(haData);
+          
+          // Pre-populate the `addedIds` set using the items returned from Prisma
+          const existingIds = new Set<string>(dbData.map((d: any) => d.id));
+          setAddedIds(existingIds);
         } else {
-          console.error('Failed to fetch devices');
+          console.error('Failed to fetch data properly');
         }
       } catch (error) {
-        console.error('Error fetching devices', error);
+        console.error('Error fetching data', error);
       } finally {
         setLoading(false);
       }
     }
-    fetchDevices();
+    fetchData();
   }, []);
 
   const handleAddDevice = async (device: BaseDevice) => {
