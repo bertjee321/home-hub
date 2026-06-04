@@ -32,7 +32,7 @@ export async function GET() {
 export async function PUT(request: Request) {
   try {
     const body = await request.json();
-    const { entityId, customName, icon, isHidden } = body;
+    const { entityId, customName, icon, isHidden, groupId } = body;
 
     if (!entityId) {
       return NextResponse.json({ error: 'entityId is required' }, { status: 400 });
@@ -40,8 +40,20 @@ export async function PUT(request: Request) {
 
     const device = await prisma.device.upsert({
       where: { id: entityId },
-      update: { customName, icon, isHidden: isHidden ?? false },
-      create: { id: entityId, customName, icon, isHidden: isHidden ?? false },
+      update: { 
+        customName, 
+        icon, 
+        isHidden: isHidden ?? false,
+        // If a groupId is provided, connect it. Otherwise, do nothing.
+        ...(groupId ? { groups: { connect: { id: groupId } } } : {})
+      },
+      create: { 
+        id: entityId, 
+        customName, 
+        icon, 
+        isHidden: isHidden ?? false,
+        ...(groupId ? { groups: { connect: { id: groupId } } } : {})
+      },
     });
 
     return NextResponse.json(device);
