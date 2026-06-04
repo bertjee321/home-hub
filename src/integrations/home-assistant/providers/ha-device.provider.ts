@@ -4,18 +4,13 @@ import { haClient } from "../client";
 
 export class HomeAssistantDeviceProvider implements IDeviceProvider {
   private mapStateToDevice(stateObj: any): BaseDevice {
-    const domain = stateObj.entity_id.split(".")[0];
-    let type: BaseDevice["type"] = "unknown";
-
-    if (domain === "light") type = "light";
-    else if (domain === "switch") type = "switch";
-    else if (domain === "sensor") type = "sensor";
+    const domain: string = stateObj.entity_id.split(".")[0];
 
     return {
       id: stateObj.entity_id,
       name: stateObj.attributes.friendly_name || stateObj.entity_id,
       state: stateObj.state,
-      type,
+      type: domain,
       attributes: stateObj.attributes,
     };
   }
@@ -25,9 +20,6 @@ export class HomeAssistantDeviceProvider implements IDeviceProvider {
 
     // Filter just to some basic editable domains for devices
     return states
-      .filter((s: any) =>
-        ["light", "switch"].includes(s.entity_id.split(".")[0]),
-      )
       .map(this.mapStateToDevice);
   }
 

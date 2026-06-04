@@ -1,6 +1,7 @@
 import WebSocket from 'ws';
+import { EventEmitter } from 'events';
 
-export class HomeAssistantClient {
+export class HomeAssistantClient extends EventEmitter {
   private baseUrl: string;
   private wsUrl: string;
   private token: string;
@@ -8,6 +9,7 @@ export class HomeAssistantClient {
   private messageId = 1;
 
   constructor() {
+    super();
     this.baseUrl = process.env.HA_URL || 'http://localhost:8123';
     // Convert http:// down to ws:// 
     this.wsUrl = this.baseUrl.replace(/^http/, 'ws') + '/api/websocket';
@@ -43,9 +45,13 @@ export class HomeAssistantClient {
       }
       
       // Step 2: Handle incoming events
+      else if (message.type === 'event' && message.event?.event_type === 'state_changed') {
+        // Emit the event so other parts of our Next server can listen to it
+        this.emit('ha_state_changed', message.event.data);
+      }
       else {
-        // Just log the message so we can understand the structure!
-        console.log('[HA Client] Received message:', JSON.stringify(message, null, 2));
+        // Log other WS responses just so we don't lose track of failures/successes
+        // console.log('[HA Client] Received message:', JSON.stringify(message, null, 2));
       }
     });
 
