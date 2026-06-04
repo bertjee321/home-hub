@@ -44,15 +44,20 @@ export async function PUT(request: Request) {
         customName, 
         icon, 
         isHidden: isHidden ?? false,
-        // If a groupId is provided, connect it. Otherwise, do nothing.
-        ...(groupId ? { groups: { connect: { id: groupId } } } : {})
+        // If a groupId is provided, set it (replacing old ones). 
+        // If it's "clear", remove all groups. Otherwise do nothing.
+        ...(groupId === 'clear' 
+             ? { groups: { set: [] } } 
+             : groupId 
+                 ? { groups: { set: [{ id: groupId }] } } 
+                 : {})
       },
       create: { 
         id: entityId, 
         customName, 
         icon, 
         isHidden: isHidden ?? false,
-        ...(groupId ? { groups: { connect: { id: groupId } } } : {})
+        ...(groupId && groupId !== 'clear' ? { groups: { connect: { id: groupId } } } : {})
       },
     });
 
