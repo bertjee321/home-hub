@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 export default function DiscoverPage() {
   const [devices, setDevices] = useState<BaseDevice[]>([]);
   const [loading, setLoading] = useState(true);
+  const [addedIds, setAddedIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     async function fetchDevices() {
@@ -25,6 +26,27 @@ export default function DiscoverPage() {
     }
     fetchDevices();
   }, []);
+
+  const handleAddDevice = async (device: BaseDevice) => {
+    try {
+      const res = await fetch('/api/devices', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          entityId: device.id,
+          customName: device.name,
+        }),
+      });
+
+      if (res.ok) {
+        setAddedIds((prev) => new Set(prev).add(device.id));
+      } else {
+        console.error('Failed to save device');
+      }
+    } catch (error) {
+      console.error('Error saving device', error);
+    }
+  };
 
   return (
     <div className="p-8 text-gray-900 dark:text-gray-100">
@@ -55,8 +77,16 @@ export default function DiscoverPage() {
                     <td className="py-2 px-4 border-b dark:border-gray-700">{device.state}</td>
                     <td className="py-2 px-4 border-b dark:border-gray-700">{device.type}</td>
                     <td className="py-2 px-4 border-b dark:border-gray-700">
-                      <button className="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-sm rounded">
-                        Add to Dashboard
+                      <button
+                        onClick={() => handleAddDevice(device)}
+                        disabled={addedIds.has(device.id)}
+                        className={`px-3 py-1 text-white text-sm rounded ${
+                          addedIds.has(device.id)
+                            ? 'bg-green-500 cursor-default'
+                            : 'bg-blue-500 hover:bg-blue-600'
+                        }`}
+                      >
+                        {addedIds.has(device.id) ? 'Added' : 'Add to Dashboard'}
                       </button>
                     </td>
                   </tr>
