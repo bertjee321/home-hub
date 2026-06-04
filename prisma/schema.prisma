@@ -1,0 +1,28 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model DeviceGroup {
+  id          String   @id @default(cuid())
+  name        String
+  icon        String?
+  sortOrder   Int      @default(0)
+  devices     Device[]
+}
+
+model Device {
+  id          String   @id // This will be the HA entity_id (e.g., "light.living_room")
+  customName  String?  // Overrides the HA friendly_name
+  icon        String?  // Overrides the HA icon (e.g., Lucide icon names)
+  isHidden    Boolean  @default(false) // Allows us to hide messy HA entities from our UI
+  groups      DeviceGroup[]
+}
