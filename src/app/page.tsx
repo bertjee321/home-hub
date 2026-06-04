@@ -4,17 +4,24 @@ import { useEffect, useState } from "react";
 
 export default function Home() {
   const [devices, setDevices] = useState<any[]>([]);
+  const [groupsConfig, setGroupsConfig] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isGroupModalOpen, setIsGroupModalOpen] = useState(false);
+  const [newGroupName, setNewGroupName] = useState("");
 
   useEffect(() => {
     // 1. Fetch the initial list of Opted-In dashboard devices + their current HA state
+    //    and fetch the list of available groups
     async function fetchDashboard() {
       try {
-        const res = await fetch("/api/devices");
-        if (res.ok) {
-          const data = await res.json();
-          setDevices(data);
-        }
+        const [devRes, grpRes] = await Promise.all([
+          fetch("/api/devices"),
+          fetch("/api/groups")
+        ]);
+        
+        if (devRes.ok) setDevices(await devRes.json());
+        if (grpRes.ok) setGroupsConfig(await grpRes.json());
+        
       } catch (err) {
         console.error("Failed to fetch dashboard data:", err);
       } finally {
@@ -49,6 +56,28 @@ export default function Home() {
     };
   }, []);
 
+  const handleCreateGroup = async () => {
+    if (!newGroupName.trim()) return;
+
+    try {
+      const res = await fetch('/api/groups', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: newGroupName.trim() }),
+      });
+
+      if (res.ok) {
+        setIsGroupModalOpen(false);
+        setNewGroupName("");
+        // Optionally trigger a re-fetch of the dashboard to pull the new group structures
+        // (Even if empty, it's good practice so they appear in dropdowns later)
+        // window.location.reload(); 
+      }
+    } catch (error) {
+      console.error('Failed to create group:', error);
+    }
+  };
+
   if (loading)
     return (
       <div className="p-8 text-black dark:text-white">Loading Dashboard...</div>
@@ -56,12 +85,30 @@ export default function Home() {
 
   // Separate devices into "Unparented" (no groups) and whatever groups we have
   const unparentedDevices = devices.filter((d) => !d.groups || d.groups.length === 0);
-  const groupedDevices = devices.filter((d) => d.groups && d.groups.length > 0);
+
+  // We map over our explicit groups config so that empty groups render. 
+  // Then we filter out the devices belonging to each group.
+  const groupsToRender = groupsConfig.map(group => {
+    const devicesInGroup = devices.filter(d => 
+      d.groups && d.groups.some((g: any) => g.id === group.id)
+    );
+    return {
+      ...group,
+      devices: devicesInGroup
+    };
+  });
+
 
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-zinc-900 p-8 text-black dark:text-white font-sans">
-      <header className="mb-8">
+      <header className="mb-8 flex justify-between items-center">
         <h1 className="text-3xl font-bold">Smart Home Dashboard</h1>
+        <button
+          onClick={() => setIsGroupModalOpen(true)}
+          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow font-medium transition"
+        >
+          Create Group
+        </button>
       </header>
 
       <main className="space-y-8">
@@ -92,7 +139,72 @@ export default function Home() {
           )}
         </section>
 
+        {/* Dynamic Groups rendering */ }
+        {groupsToRender.map(group => (
+          <section key={group.id} className="bg-white dark:bg-zinc-800 p-6 rounded-2xl shadow-sm">
+            <h2 className="text-2xl font-semibold mb-4">{group.name}</h2>
+            {group.devices.length === 0 ? (
+              <p className="text-gray-500">No devices in this group.</p>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                {group.devices.map((device: any) => (
+                  <div
+                    key={device.id}
+                    className={`p-4 rounded-xl border flex flex-col justify-between ${
+                      device.state === 'on' 
+                        ? 'bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:border-blue-800' 
+                        : 'bg-gray-50 border-gray-200 dark:bg-zinc-900 dark:border-zinc-700'
+                    }`}
+                  >
+                    <div>
+                      <h3 className="font-semibold">{device.customName || device.id}</h3>
+                      <p className="text-sm text-gray-500 dark:text-gray-400 capitalize">{device.state}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+        ))}
+
       </main>
+
+      {/* Create Group Modal */}
+      {isGroupModalOpen && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-zinc-800 p-6 rounded-xl w-full max-w-sm shadow-xl">
+            <h2 className="text-xl font-bold mb-4">Create New Group</h2>
+            <input
+              type="text"
+              autoFocus
+              className="w-full border dark:border-zinc-700 bg-transparent rounded px-3 py-2 mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="e.g. Living Room"
+              value={newGroupName}
+              onChange={(e) => setNewGroupName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && newGroupName.trim().length > 0) {
+                  handleCreateGroup();
+                }
+              }}
+            />
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setIsGroupModalOpen(false)}
+                className="px-4 py-2 rounded text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-zinc-700 transition"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleCreateGroup}
+                disabled={newGroupName.trim().length === 0}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded transition"
+              >
+                Create
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
