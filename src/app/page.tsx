@@ -147,7 +147,7 @@ export default function Home() {
 
 
   return (
-    <div className="min-h-screen bg-gray-100 dark:bg-zinc-900 p-8 text-black dark:text-white font-sans">
+    <div className="p-8 text-white font-sans">
       <header className="mb-8 flex justify-between items-center">
         <h1 className="text-3xl font-bold">Smart Home Dashboard</h1>
         <button
@@ -158,60 +158,9 @@ export default function Home() {
         </button>
       </header>
 
-      <main className="space-y-8">
+      <div className="space-y-8">
         {/* We can flesh out Groups later, for now we will just list Unparented ones! */}
         
-        <section className="bg-white dark:bg-zinc-800 p-6 rounded-2xl shadow-sm">
-          <h2 className="text-2xl font-semibold mb-4">Unparented Devices</h2>
-          {unparentedDevices.length === 0 ? (
-            <p className="text-gray-500">No unparented devices on the dashboard.</p>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-              {unparentedDevices.map(device => (
-                <div
-                  key={device.id}
-                  className={`p-4 rounded-xl border flex justify-between items-start ${
-                    device.state === 'on' 
-                      ? 'bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:border-blue-800' 
-                      : 'bg-gray-50 border-gray-200 dark:bg-zinc-900 dark:border-zinc-700'
-                  }`}
-                >
-                  <div className="flex items-center gap-3 flex-1">
-                    {(device.id.startsWith('light.') || device.id.startsWith('switch.')) && (
-                      <button 
-                        onClick={() => handleToggleDevice(device)}
-                        className={`w-10 h-6 rounded-full relative transition-colors ${device.state === 'on' ? 'bg-blue-500' : 'bg-gray-300 dark:bg-gray-600'}`}
-                        aria-label={`Toggle ${device.customName || device.id}`}
-                      >
-                        <span className={`absolute top-1 left-1 bg-white w-4 h-4 rounded-full transition-transform ${device.state === 'on' ? 'translate-x-4' : ''}`} />
-                      </button>
-                    )}
-                    <div className="flex-1 cursor-pointer">
-                      <h3 className="font-semibold">{device.customName || device.id}</h3>
-                      <p className="text-sm text-gray-500 dark:text-gray-400 capitalize">{device.state}</p>
-                    </div>
-                  </div>
-                  <div className="relative">
-                    <button className="text-gray-500 hover:text-gray-900 dark:hover:text-gray-100 p-1 font-bold">
-                      &#8964; {/* Down arrow / menu icon */}
-                    </button>
-                    <select
-                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer bg-white text-black dark:bg-zinc-800 dark:text-white"
-                      value=""
-                      onChange={(e) => handleAssignToGroup(device, e.target.value)}
-                    >
-                      <option value="" disabled>Move to...</option>
-                      {groupsConfig.map(g => (
-                        <option key={g.id} value={g.id}>{g.name}</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </section>
-
         {/* Dynamic Groups rendering */ }
         {groupsToRender.map(group => (
           <section key={group.id} className="bg-white dark:bg-zinc-800 p-6 rounded-2xl shadow-sm">
@@ -267,7 +216,58 @@ export default function Home() {
           </section>
         ))}
 
-      </main>
+                <section className="bg-white dark:bg-zinc-800 p-6 rounded-2xl shadow-sm">
+          <h2 className="text-2xl font-semibold mb-4">Unparented Devices</h2>
+          {unparentedDevices.length === 0 ? (
+            <p className="text-gray-500">No unparented devices on the dashboard.</p>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+              {unparentedDevices.map(device => (
+                <div
+                  key={device.id}
+                  className={`p-4 rounded-xl border flex justify-between items-start ${
+                    device.state === 'on' 
+                      ? 'bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:border-blue-800' 
+                      : 'bg-gray-50 border-gray-200 dark:bg-zinc-900 dark:border-zinc-700'
+                  }`}
+                >
+                  <div className="flex items-center gap-3 flex-1">
+                    {(device.id.startsWith('light.') || device.id.startsWith('switch.')) && (
+                      <button 
+                        onClick={() => handleToggleDevice(device)}
+                        className={`w-10 h-6 rounded-full relative transition-colors ${device.state === 'on' ? 'bg-blue-500' : 'bg-gray-300 dark:bg-gray-600'}`}
+                        aria-label={`Toggle ${device.customName || device.id}`}
+                      >
+                        <span className={`absolute top-1 left-1 bg-white w-4 h-4 rounded-full transition-transform ${device.state === 'on' ? 'translate-x-4' : ''}`} />
+                      </button>
+                    )}
+                    <div className="flex-1 cursor-pointer">
+                      <h3 className="font-semibold">{device.customName || device.id}</h3>
+                      <p className="text-sm text-gray-500 dark:text-gray-400 capitalize">{device.state}</p>
+                    </div>
+                  </div>
+                  <div className="relative">
+                    <button className="text-gray-500 hover:text-gray-900 dark:hover:text-gray-100 p-1 font-bold">
+                      &#8964; {/* Down arrow / menu icon */}
+                    </button>
+                    <select
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer bg-white text-black dark:bg-zinc-800 dark:text-white"
+                      value=""
+                      onChange={(e) => handleAssignToGroup(device, e.target.value)}
+                    >
+                      <option value="" disabled>Move to...</option>
+                      {groupsConfig.map(g => (
+                        <option key={g.id} value={g.id}>{g.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+
+      </div>
 
       {/* Create Group Modal */}
       {isGroupModalOpen && (

@@ -119,7 +119,7 @@ export default function DiscoverPage() {
   };
 
   return (
-    <div className="p-8 text-gray-900 dark:text-gray-100">
+    <div className="p-8 text-white">
       <h1 className="text-2xl font-bold mb-6">Discover Home Assistant Devices</h1>
       
       {loading ? (
