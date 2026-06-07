@@ -1,19 +1,20 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/shared/db/prisma';
 import { haClient } from '@/integrations/home-assistant/client';
+import { Device, MergedDevice } from '@/lib/models/device.model';
 
 // GET configured devices from Prisma and merge with their current HA state
 export async function GET() {
   try {
-    const configuredDevices = await prisma.device.findMany({
+    const configuredDevices: Device[] = await prisma.device.findMany({
       include: { groups: true }
     });
 
     // Fetch the live states from HA to overlay onto our Prisma config
     const haStates = await haClient.getStates();
 
-    const mergedDevices = configuredDevices.map(dbDevice => {
-      const liveState = haStates.find((s: any) => s.entity_id === dbDevice.id);
+    const mergedDevices: MergedDevice[] = configuredDevices.map(dbDevice => {
+      const liveState = haStates.find((s) => s.entity_id === dbDevice.id);
       return {
         ...dbDevice,
         state: liveState?.state || 'unavailable',
